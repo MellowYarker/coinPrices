@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My first Vue app</title>
+    <title>Chainalysis Challenge</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
     <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
@@ -67,13 +67,13 @@
                     {
                         id: 0,
                         name: "Kraken",
-                        currencies: [{symbol: "BTC", price: 55000}, {symbol: "ETH", price: 3800}],
+                        currencies: [{symbol: "BTC", price: 0}, {symbol: "ETH", price: 0}],
                         image: "images/kraken.jpg"
                     },
                     {
                         id: 1,
                         name: "Coinbase",
-                        currencies: [{symbol: "BTC", price: 54000}, {symbol: "ETH", price: 3600}],
+                        currencies: [{symbol: "BTC", price: 0}, {symbol: "ETH", price: 0}],
                         image: "images/coinbase.svg"
                     }],
                     buy_recs: [{symbol: "BTC", exchange: "coinbase"}, {symbol: "ETH", exchange: "coinbase"}],
@@ -118,7 +118,7 @@
         async function checkPrices() {
             <!-- for (let i = 0; i < 10; i++) { -->
             var i = 0;
-            while (i < 200) {
+            while (i < 50) {
                 await sleep(2000);
                 app.message = "Checked prices " + i + " times.";
                 i++;
