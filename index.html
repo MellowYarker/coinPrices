@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My first Vue app</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        {{ message }}
+
+        <div class="homepage">
+            <div>
+                <exchange
+                    v-for="exchange in exchanges"
+                    v-bind:exchange="exchange"
+                    v-bind:key="exchange.id"
+                ></exchange>
+            </div>
+            <div>
+                <price-display
+                    v-for="exchange in exchanges"
+                    v-bind:exchange="exchange"
+                    v-bind:key="exchange.id"
+                ></price-display>
+            </div>
+
+            <div class="recommendations">
+                <recommendation text="buy"
+                    v-for="rec in buy_recs"
+                    v-bind:rec="rec"
+                    v-bind:exchanges="exchanges"
+                ></recommendation>
+                <recommendation text="sell"
+                    v-for="rec in sell_recs"
+                    v-bind:rec="rec"
+                    v-bind:exchanges="exchanges"
+                ></recommendation>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Our exchange title
+        Vue.component('exchange', {
+            props: ['exchange'],
+            template: '<span class="exchange-logo-span"><img class="exchange-logo" v-bind:src = exchange.image></span>'
+        })
+
+        // Our prices component
+        Vue.component('price-display', {
+            props: ['exchange'],
+                    template: '<span class="price-section"><div v-for="currency in exchange.currencies">1 {{ currency.symbol }} = {{currency.price}}USD</div></span>'
+        })
+
+        // Our recommendations
+        Vue.component('recommendation', {
+            props: ['text', 'rec'],
+                    template: '<span class="recommendation-section">We recommend you {{ text }} {{ rec.symbol }} on {{ rec.exchange }}.</span>'
+        })
+
+        var app = new Vue({
+            el: '#app',
+            data: {
+                message: 'Hello Vue!',
+                exchanges: [
+                    {
+                        id: 0,
+                        name: "Kraken",
+                        currencies: [{symbol: "BTC", price: 55000}, {symbol: "ETH", price: 3800}],
+                        image: "kraken.jpg"
+                    },
+                    {
+                        id: 1,
+                        name: "Coinbase",
+                        currencies: [{symbol: "BTC", price: 54000}, {symbol: "ETH", price: 3600}],
+                        image: "coinbase.svg"
+                    }],
+                    buy_recs: [{symbol: "BTC", exchange: "coinbase"}, {symbol: "ETH", exchange: "coinbase"}],
+                    sell_recs: [{symbol: "BTC", exchange: "kraken"}, {symbol: "ETH", exchange: "kraken"}]
+            },
+            methods: {
+                findRecommendations: function () {
+                    kraken = this.exchanges[0]
+                    coinbase = this.exchanges[1]
+
+                    // Set the recommendations.
+                    for (let i = 0; i < 2; i++) {
+                        if (kraken.currencies[i].price < coinbase.currencies[i].price) {
+                            this.buy_recs[i] = {
+                                symbol: kraken.currencies[i].symbol,
+                                exchange: kraken.name
+                            }
+
+                            this.sell_recs[i] = {
+                                symbol: coinbase.currencies[i].symbol,
+                                exchange: coinbase.name
+                            }
+                        } else {
+                            this.buy_recs[i] = {
+                                symbol: coinbase.currencies[i].symbol,
+                                exchange: coinbase.name
+                            }
+                            this.sell_recs[i] = {
+                                symbol: kraken.currencies[i].symbol,
+                                exchange: kraken.name
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function checkPrices() {
+            <!-- for (let i = 0; i < 10; i++) { -->
+            var i = 0;
+            while (i < 200) {
+                await sleep(2000);
+                app.message = "Checked prices " + i + " times.";
+                i++;
+                let mydata = fetch("http://localhost:8000/prices.json")
+                .then(response => {
+                    return response.json()
+                })
+                .then(json => {
+                    let kraken = json["kraken"];
+                    let coinbase = json["coinbase"];
+
+                    <!-- console.log(kraken); -->
+                    <!-- console.log(coinbase); -->
+
+                    app.exchanges[0].currencies[0].price = kraken["BTC"]["buy"];
+                    app.exchanges[0].currencies[1].price = kraken["ETH"]["buy"];
+                    app.exchanges[1].currencies[0].price = coinbase["BTC"]["buy"];
+                    app.exchanges[1].currencies[1].price = coinbase["ETH"]["buy"];
+                    return ;
+                })
+                .catch(response => alert(response.status))
+                app.findRecommendations();
+            }
+        }
+        checkPrices();
+    </script>
+</body>
+</html>
+

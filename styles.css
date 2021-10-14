@@ -1,0 +1,31 @@
+.homepage {
+    width: 100%;
+    padding-top: 10%;
+    padding-left: 40%;
+    padding-right: 40%;
+    position: absolute;
+}
+
+.exchange-logo-span {
+    padding: 30px;
+}
+
+.exchange-logo {
+    height: 60px;
+    width: 100px;
+    padding-left: 55px;
+}
+
+.price-section {
+    padding: 30px;
+    display: inline-block;
+}
+
+.recommendations {
+    padding: 30px;
+}
+
+.recommendation-section {
+    padding: 30px;
+    display: block;
+}
