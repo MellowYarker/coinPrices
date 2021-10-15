@@ -1,24 +1,16 @@
 import requests
 import json
 import time
+import signal
+import sys
 
 """
 Kraken's API:
     https://api.kraken.com/0/public/Ticker?pair=BTCUSD
-    https://api.kraken.com/0/public/Ticker?pair=ETHUSD
-
-We can get the data like so:
-    json = (url blah blah).json()
-    lowest_ask = json[a][0]
-    highest_bid = json[b][0]
 
 Coinbase's API:
     https://api.coinbase.com/v2/prices/BTC-USD/buy
-    https://api.coinbase.com/v2/prices/BTC-USD/sell
-
-    https://api.coinbase.com/v2/prices/ETH-USD/buy
     https://api.coinbase.com/v2/prices/ETH-USD/sell
-
 """
 
 def call_kraken():
@@ -91,14 +83,27 @@ def call_coinbase():
 
     return results
 
-if __name__ == "__main__":
+# Quiet termination
+def signal_handler(sig, frame):
+    sys.exit(0)
+
+# TODO: This works, but is generally pretty messy and we can do better.
+# Some simple things we can fix:
+#   1. call_x() functions can return class objects or dictionaries
+#   2. We don't have to lose our dictionaries each time we loop,
+#      create them once and reuse/modify them!
+#   3. We do the same process for each exchange, just make a function.
+def runCrawler():
+    # Signal handling
+    signal.signal(signal.SIGINT, signal_handler)
 
     with open ("prices.json", "w") as f:
         while(True):
             kraken_prices = call_kraken()
-            # print("Kraken:");
-            # for x in kraken_prices:
-            #     print(f"\t{x}")
+            if type(kraken_prices) is IOError:
+                # TODO: We got an error
+                raise(kraken_prices)
+                continue
 
             kraken_dict = dict()
             for x in kraken_prices:
@@ -109,9 +114,10 @@ if __name__ == "__main__":
                 kraken_dict[x[0]] = price_dict
 
             coinbase_prices = call_coinbase()
-            # print("Coinbase:");
-            # for x in coinbase_prices:
-            #     print(f"\t{x}")
+            if type(coinbase_prices) is IOError:
+                # TODO: We got an error
+                raise(coinbase_prices)
+                continue
 
             coinbase_dict = dict()
             for x in coinbase_prices:
@@ -133,28 +139,26 @@ if __name__ == "__main__":
             f.write(final_string)
             f.seek(0)
             time.sleep(2)
-
-
-    """
-    The resulting JSON should be of the following form:
-    "kraken": {
-        "btc": {
-            "buy": x,
-            "sell": x
-        },
-        "eth": {
-            "buy": x,
-            "sell": x
-        }
-    },
-    "coinbase": {
-        "btc": {
-            "buy": x,
-            "sell": x
-        },
-        "eth": {
-            "buy": x,
-            "sell": x
-        }
-    }
-    """
+            """
+            The resulting JSON should be of the following form:
+            "kraken": {
+                "BTC": {
+                    "buy": x,
+                    "sell": x
+                },
+                "ETH": {
+                    "buy": x,
+                    "sell": x
+                }
+            },
+            "coinbase": {
+                "BTC": {
+                    "buy": x,
+                    "sell": x
+                },
+                "ETH": {
+                    "buy": x,
+                    "sell": x
+                }
+            }
+            """
