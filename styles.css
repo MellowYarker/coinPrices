@@ -20,11 +20,11 @@
 }
 
 .homepage {
-    width: 100%;
     padding-top: 10%;
     padding-left: 40%;
-    padding-right: 40%;
     position: absolute;
+    width: 500px;
+
 }
 
 .networkDown {
@@ -42,7 +42,7 @@
     border: 3px;
     border-color: black;
     border-style: solid;
-    width: 400px;
+    width: 474px; /* homepage width - recommendations.padding * 2 - recommendations.border * 2*/
 }
 
 .recommendation-section {
