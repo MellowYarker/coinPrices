@@ -147,4 +147,4 @@ def runCrawler():
             # Overwrite our data
             f.write(final_string)
             f.seek(0)
-            time.sleep(2)
+            time.sleep(4)
