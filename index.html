@@ -25,7 +25,7 @@
                 ></price-display>
             </div>
 
-            <div class="recommendations">
+            <div v-if="reqsMade" class="recommendations">
                 <recommendation text="buy"
                     v-for="rec in buy_recs"
                     v-bind:rec="rec"
@@ -80,9 +80,10 @@
                         image: "images/coinbase.svg"
                     }],
                     // TODO: start this off empty!
-                    buy_recs: [{symbol: "BTC", exchange: "coinbase"}, {symbol: "ETH", exchange: "coinbase"}],
-                    sell_recs: [{symbol: "BTC", exchange: "kraken"}, {symbol: "ETH", exchange: "kraken"}],
-                    deadNetwork: true // the connection to the server is down.
+                    buy_recs: [{symbol: "BTC", exchange: ""}, {symbol: "ETH", exchange: ""}],
+                    sell_recs: [{symbol: "BTC", exchange: ""}, {symbol: "ETH", exchange: ""}],
+                    deadNetwork: true,  // the connection to the server is down.
+                    reqsMade: false     // true if we've made a recommendation
             },
             methods: {
                 findRecommendations: function () {
@@ -112,6 +113,7 @@
                             }
                         }
                     }
+                    this.reqsMade = true;
                 },
                 attemptConnection: function () {
                     app.deadNetwork = false;
@@ -129,7 +131,9 @@
             var i = 0;
             // only iterate if the network is up
             while (i < 50 && !(app.deadNetwork)) {
-                await sleep(2000);
+                if (app.reqsMade) {
+                    await sleep(2000);
+                }
                 app.message = "Checked prices " + i + " times.";
                 i++;
                 let mydata = fetch("http://localhost:8000/prices.json")
@@ -157,6 +161,9 @@
                 .catch(response => {
                     app.deadNetwork = true;
                 })
+                if (!app.reqsMade) {
+                    await sleep(2000);
+                }
             }
         }
     </script>
