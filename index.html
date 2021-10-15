@@ -59,7 +59,7 @@
         // Our prices component
         Vue.component('price-display', {
             props: ['exchange'],
-            template: '<span class="price-section"><div class="currency" v-for="currency in exchange.currencies"><div class="trade"><a v-bind:href=exchange.link class="exchange-link">buy</a> {{ currency.symbol }}: {{currency.buy}} USD</div><div class="trade"><a v-bind:href=exchange.link class="exchange-link">sell</a> {{ currency.symbol }}: {{currency.sell}} USD</div></div></span>'
+            template: '<span class="price-section"><div class="currency" v-for="currency in exchange.currencies"><div class="trade"><a v-bind:href=exchange.link class="exchange-link-buy">buy</a> {{ currency.symbol }}: {{currency.buy}} USD</div><div class="trade"><a v-bind:href=exchange.link class="exchange-link-sell">sell</a> {{ currency.symbol }}: {{currency.sell}} USD</div></div></span>'
         })
 
         // Our recommendations

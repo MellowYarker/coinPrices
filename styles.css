@@ -16,12 +16,23 @@
     padding-bottom: 15px;
 }
 
-.exchange-link {
+.exchange-link-buy {
     background: lightgrey;
     border-color: lightgrey;
     border-radius: 5px;
     border-style: solid;
-    color: black;
+    color: green;
+    padding-left: 4px;
+    padding-right: 4px;
+    text-decoration: none;
+}
+
+.exchange-link-sell {
+    background: lightgrey;
+    border-color: lightgrey;
+    border-radius: 5px;
+    border-style: solid;
+    color: red;
     padding-left: 4px;
     padding-right: 4px;
     text-decoration: none;
