@@ -12,7 +12,19 @@
 }
 
 .currency {
-    padding: 10px;
+    padding-left: 10px;
+    padding-bottom: 15px;
+}
+
+.exchange-link {
+    background: lightgrey;
+    border-color: lightgrey;
+    border-radius: 5px;
+    border-style: solid;
+    color: black;
+    padding-left: 4px;
+    padding-right: 4px;
+    text-decoration: none;
 }
 
 .exchange-logo {
@@ -37,6 +49,11 @@
     top: 50%;
 }
 
+.prices {
+    position: relative;
+    display: inline-flex;
+}
+
 .price-section {
     display: inline-block;
     padding: 30px;
@@ -59,6 +76,12 @@
 }
 
 .recommendation-title {
+    font-size: 25px;
+    font-weight: bold;
     padding-bottom: 10px;
     text-align: center;
+}
+
+.trade {
+    padding-bottom: 10px;
 }

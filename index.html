@@ -17,7 +17,7 @@
                     v-bind:key="exchange.id"
                 ></exchange>
             </div>
-            <div>
+            <div class="prices">
                 <price-display
                     v-for="exchange in exchanges"
                     v-bind:exchange="exchange"
@@ -28,20 +28,20 @@
             <div v-if="reqsMade" class="recommendations">
                 <div class="buy-or-sell">
                     <div class="recommendation-title">Best Buy</div>
-                        <recommendation
-                            v-for="rec in buy_recs"
-                            v-bind:rec="rec"
-                            v-bind:exchanges="exchanges"
-                        ></recommendation>
-                    </div>
+                    <recommendation
+                        v-for="rec in buy_recs"
+                        v-bind:rec="rec"
+                        v-bind:exchanges="exchanges"
+                    ></recommendation>
+                </div>
                 <div class="buy-or-sell">
                     <div class="recommendation-title">Best Sell</div>
-                        <recommendation
-                            v-for="rec in sell_recs"
-                            v-bind:rec="rec"
-                            v-bind:exchanges="exchanges"
-                        ></recommendation>
-                    </div>
+                    <recommendation
+                        v-for="rec in sell_recs"
+                        v-bind:rec="rec"
+                        v-bind:exchanges="exchanges"
+                    ></recommendation>
+                </div>
             </div>
         </div>
         <div v-else class="networkDown">
@@ -59,7 +59,7 @@
         // Our prices component
         Vue.component('price-display', {
             props: ['exchange'],
-            template: '<span class="price-section"><div  class="currency" v-for="currency in exchange.currencies"><div>buy {{ currency.symbol }}: {{currency.buy}} USD</div><div>sell {{ currency.symbol }}: {{currency.sell}} USD</div></div></span>'
+            template: '<span class="price-section"><div class="currency" v-for="currency in exchange.currencies"><div class="trade"><a v-bind:href=exchange.link class="exchange-link">buy</a> {{ currency.symbol }}: {{currency.buy}} USD</div><div class="trade"><a v-bind:href=exchange.link class="exchange-link">sell</a> {{ currency.symbol }}: {{currency.sell}} USD</div></div></span>'
         })
 
         // Our recommendations
@@ -77,13 +77,15 @@
                         id: 0,
                         name: "Kraken",
                         currencies: [{symbol: "BTC", buy: 0, sell: 0}, {symbol: "ETH", buy: 0, sell: 0}],
-                        image: "images/kraken.jpg"
+                        image: "images/kraken.jpg",
+                        link: "https://www.kraken.com"
                     },
                     {
                         id: 1,
                         name: "Coinbase",
                         currencies: [{symbol: "BTC", buy: 0, sell: 0}, {symbol: "ETH", buy: 0, sell: 0}],
-                        image: "images/coinbase.svg"
+                        image: "images/coinbase.svg",
+                        link: "https://www.coinbase.com"
                     }],
                     // TODO: start this off empty!
                     buy_recs: [{symbol: "BTC", exchange: ""}, {symbol: "ETH", exchange: ""}],
