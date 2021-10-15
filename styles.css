@@ -21,7 +21,7 @@
     border-color: lightgrey;
     border-radius: 5px;
     border-style: solid;
-    color: green;
+    color: cornflowerblue;
     padding-left: 4px;
     padding-right: 4px;
     text-decoration: none;
@@ -32,7 +32,7 @@
     border-color: lightgrey;
     border-radius: 5px;
     border-style: solid;
-    color: red;
+    color: orangered;
     padding-left: 4px;
     padding-right: 4px;
     text-decoration: none;
@@ -49,7 +49,7 @@
 }
 
 .homepage {
-    padding-left: 40%;
+    padding-left: 35%;
     padding-top: 10%;
     position: absolute;
     width: 500px;
