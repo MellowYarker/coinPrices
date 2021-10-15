@@ -9,7 +9,7 @@
     <div id="app">
         {{ message }}
 
-        <div class="homepage">
+        <div v-if="!deadNetwork" class="homepage">
             <div>
                 <exchange
                     v-for="exchange in exchanges"
@@ -38,6 +38,9 @@
                 ></recommendation>
             </div>
         </div>
+        <div v-else class="networkDown">
+            <button class="connect-button" v-on:click="attemptConnection">Attempt server connection</button>
+        </div>
     </div>
 
     <script>
@@ -50,7 +53,7 @@
         // Our prices component
         Vue.component('price-display', {
             props: ['exchange'],
-                    template: '<span class="price-section"><div v-for="currency in exchange.currencies">1 {{ currency.symbol }} = {{currency.price}}USD</div></span>'
+                    template: '<span class="price-section"><div  class="currency" v-for="currency in exchange.currencies"><div>buy {{ currency.symbol }}: {{currency.buy}}USD</div><div>sell {{ currency.symbol }}: {{currency.sell}}USD</div></div></span>'
         })
 
         // Our recommendations
@@ -67,17 +70,19 @@
                     {
                         id: 0,
                         name: "Kraken",
-                        currencies: [{symbol: "BTC", price: 0}, {symbol: "ETH", price: 0}],
+                        currencies: [{symbol: "BTC", buy: 0, sell: 0}, {symbol: "ETH", buy: 0, sell: 0}],
                         image: "images/kraken.jpg"
                     },
                     {
                         id: 1,
                         name: "Coinbase",
-                        currencies: [{symbol: "BTC", price: 0}, {symbol: "ETH", price: 0}],
+                        currencies: [{symbol: "BTC", buy: 0, sell: 0}, {symbol: "ETH", buy: 0, sell: 0}],
                         image: "images/coinbase.svg"
                     }],
+                    // TODO: start this off empty!
                     buy_recs: [{symbol: "BTC", exchange: "coinbase"}, {symbol: "ETH", exchange: "coinbase"}],
-                    sell_recs: [{symbol: "BTC", exchange: "kraken"}, {symbol: "ETH", exchange: "kraken"}]
+                    sell_recs: [{symbol: "BTC", exchange: "kraken"}, {symbol: "ETH", exchange: "kraken"}],
+                    deadNetwork: true // the connection to the server is down.
             },
             methods: {
                 findRecommendations: function () {
@@ -86,7 +91,7 @@
 
                     // Set the recommendations.
                     for (let i = 0; i < 2; i++) {
-                        if (kraken.currencies[i].price < coinbase.currencies[i].price) {
+                        if (kraken.currencies[i].buy < coinbase.currencies[i].buy) {
                             this.buy_recs[i] = {
                                 symbol: kraken.currencies[i].symbol,
                                 exchange: kraken.name
@@ -107,6 +112,10 @@
                             }
                         }
                     }
+                },
+                attemptConnection: function () {
+                    app.deadNetwork = false;
+                    checkPrices();
                 }
             }
         });
@@ -118,7 +127,8 @@
         async function checkPrices() {
             <!-- for (let i = 0; i < 10; i++) { -->
             var i = 0;
-            while (i < 50) {
+            // only iterate if the network is up
+            while (i < 50 && !(app.deadNetwork)) {
                 await sleep(2000);
                 app.message = "Checked prices " + i + " times.";
                 i++;
@@ -127,23 +137,28 @@
                     return response.json()
                 })
                 .then(json => {
+                    app.deadNetwork = false;
                     let kraken = json["kraken"];
                     let coinbase = json["coinbase"];
 
-                    <!-- console.log(kraken); -->
-                    <!-- console.log(coinbase); -->
+                    app.exchanges[0].currencies[0].buy = kraken["BTC"]["buy"];
+                    app.exchanges[0].currencies[1].buy = kraken["ETH"]["buy"];
+                    app.exchanges[0].currencies[0].sell = kraken["BTC"]["sell"];
+                    app.exchanges[0].currencies[1].sell = kraken["ETH"]["sell"];
 
-                    app.exchanges[0].currencies[0].price = kraken["BTC"]["buy"];
-                    app.exchanges[0].currencies[1].price = kraken["ETH"]["buy"];
-                    app.exchanges[1].currencies[0].price = coinbase["BTC"]["buy"];
-                    app.exchanges[1].currencies[1].price = coinbase["ETH"]["buy"];
+                    app.exchanges[1].currencies[0].buy = coinbase["BTC"]["buy"];
+                    app.exchanges[1].currencies[1].buy = coinbase["ETH"]["buy"];
+                    app.exchanges[1].currencies[0].sell = coinbase["BTC"]["sell"];
+                    app.exchanges[1].currencies[1].sell = coinbase["ETH"]["sell"];
+
+                    app.findRecommendations();
                     return ;
                 })
-                .catch(response => alert(response.status))
-                app.findRecommendations();
+                .catch(response => {
+                    app.deadNetwork = true;
+                })
             }
         }
-        checkPrices();
     </script>
 </body>
 </html>
