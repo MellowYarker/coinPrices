@@ -2,8 +2,10 @@
 A webpage that shows the prices on two crypto exchanges
 
 # Usage
-To start the server, run `sh run_app.sh`.
+To start the server, run `python3 run_app.py`.
 
-It will print out the process IDs for `crawler.py` and `server.py`, when you want to shut the server off, just run `kill -KILL pid` where `pid` is replaced with the process IDs that got printed earlier.
+It will print out the process IDs for `crawler.py` and `server.py`.
+To shut the server and crawler down, just hit the program with sigint via `ctrl + c`, or kill the processes
+manually using the PIDs printed earlier.
 
-Next, just open `index.html` in your browser to view the webpage.
+Next, open `index.html` in your browser to view the webpage.
