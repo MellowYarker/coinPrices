@@ -92,21 +92,25 @@
 
                     // Set the recommendations.
                     for (let i = 0; i < 2; i++) {
+                        // Buy recommendation, we buy wherever is cheaper
                         if (kraken.currencies[i].buy < coinbase.currencies[i].buy) {
                             this.buy_recs[i] = {
                                 symbol: kraken.currencies[i].symbol,
                                 exchange: kraken.name
-                            }
-
-                            this.sell_recs[i] = {
-                                symbol: coinbase.currencies[i].symbol,
-                                exchange: coinbase.name
                             }
                         } else {
                             this.buy_recs[i] = {
                                 symbol: coinbase.currencies[i].symbol,
                                 exchange: coinbase.name
                             }
+                        }
+                        // Sell recommendation, we sell wherever is most expensive
+                        if (kraken.currencies[i].sell < coinbase.currencies[i].sell) {
+                            this.sell_recs[i] = {
+                                symbol: coinbase.currencies[i].symbol,
+                                exchange: coinbase.name
+                            }
+                        } else {
                             this.sell_recs[i] = {
                                 symbol: kraken.currencies[i].symbol,
                                 exchange: kraken.name
@@ -127,16 +131,17 @@
         }
 
         async function checkPrices() {
-            <!-- for (let i = 0; i < 10; i++) { -->
-            var i = 0;
             // only iterate if the network is up
-            while (i < 50 && !(app.deadNetwork)) {
+            var i = 0;
+            while (!app.deadNetwork) {
                 if (app.reqsMade) {
                     await sleep(2000);
                 }
-                app.message = "Checked prices " + i + " times.";
+
                 i++;
-                let mydata = fetch("http://localhost:8000/prices.json")
+                app.message = "Checked prices " + i + " times.";
+
+                fetch("http://localhost:8000/prices.json")
                 .then(response => {
                     return response.json()
                 })
@@ -156,7 +161,7 @@
                     app.exchanges[1].currencies[1].sell = coinbase["ETH"]["sell"];
 
                     app.findRecommendations();
-                    return ;
+                    return;
                 })
                 .catch(response => {
                     app.deadNetwork = true;

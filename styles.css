@@ -38,10 +38,16 @@
 }
 
 .recommendations {
-    padding: 30px;
+    padding: 10px;
+    border: 3px;
+    border-color: black;
+    border-style: solid;
+    width: 400px;
 }
 
 .recommendation-section {
-    padding: 30px;
+    padding-top: 5px;
     display: block;
+    position: relative;
+    text-align: center;
 }
