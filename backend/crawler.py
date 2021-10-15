@@ -1,8 +1,4 @@
-import requests
-import json
-import time
-import signal
-import sys
+import json, requests, signal, sys, time
 
 """
 Kraken's API:
@@ -11,19 +7,40 @@ Kraken's API:
 Coinbase's API:
     https://api.coinbase.com/v2/prices/BTC-USD/buy
     https://api.coinbase.com/v2/prices/ETH-USD/sell
+
+This program will write to prices.json the following:
+    "kraken": {
+        "BTC": {
+            "buy": x,
+            "sell": x
+        },
+        "ETH": {
+            "buy": x,
+            "sell": x
+        }
+    },
+    "coinbase": {
+        "BTC": {
+            "buy": x,
+            "sell": x
+        },
+        "ETH": {
+            "buy": x,
+            "sell": x
+        }
+    }
 """
 
-def call_kraken():
+def call_kraken(exchange: dict):
     """
-        This function sends a GET request to the kraken Ticker endpoint.
-        The response type is a list of (symbol, ask, sell) tuples, or
-        an IOError.
+        Sends a GET request to the kraken Ticker endpoint.
+        We modify the dictionary that we pass as an argument, on error,
+        we return an IOError.
     """
     base_url = "https://api.kraken.com/0/public/Ticker?pair={}"
 
     currencies = ["BTC", "ETH"]
     fiat = "USD"
-    results = list()
 
     for currency in currencies:
         pair = "{}{}".format(currency, fiat)
@@ -44,22 +61,22 @@ def call_kraken():
         lowest_ask = json['a'][0]
         highest_bid = json['b'][0]
 
-        results.append((currency, lowest_ask, highest_bid))
+        # Modifies or creates dictionary values for the given currency
+        update_exchange(exchange, currency, lowest_ask, highest_bid)
 
-    return results
+    return None
 
-def call_coinbase():
+def call_coinbase(exchange: dict):
     """
-        This function sends a GET request to the coinbase Ticker endpoint.
-        The response type is a list of (symbol, ask, sell) tuples, or
-        an IOError.
+        Sends a GET request to the coinbase prices endpoint.
+        We modify the dictionary that we pass as an argument.
+        TODO: Error checking on bad response.
     """
     base_url = "https://api.coinbase.com/v2/prices/{}/{}"
 
     currencies = ["BTC", "ETH"]
     fiat = "USD"
     actions = ["buy", "sell"]
-    results = list()
 
     for currency in currencies:
         lowest_ask = None
@@ -79,86 +96,55 @@ def call_coinbase():
             elif action == "sell":
                 highest_bid = price
 
-        results.append((currency, lowest_ask, highest_bid))
+        # Modifies or creates dictionary values for the given currency
+        update_exchange(exchange, currency, lowest_ask, highest_bid)
 
-    return results
+    return None
+
+# Modifies or creates dictionary values for the given currency
+# If the currency is found, we update the data,
+# otherwise, we create a new dictionary of prices.
+def update_exchange(exchange: dict, currency: str, lowest_ask, highest_bid):
+    if currency in exchange:
+        # Modify existing values
+        exchange[currency]["buy"] = lowest_ask
+        exchange[currency]["sell"] = highest_bid
+    else:
+        # Create new dict
+        prices = dict()
+        prices["buy"] = lowest_ask
+        prices["sell"] = highest_bid
+        exchange[currency] = prices
 
 # Quiet termination
 def signal_handler(sig, frame):
     sys.exit(0)
 
-# TODO: This works, but is generally pretty messy and we can do better.
-# Some simple things we can fix:
-#   1. call_x() functions can return class objects or dictionaries
-#   2. We don't have to lose our dictionaries each time we loop,
-#      create them once and reuse/modify them!
-#   3. We do the same process for each exchange, just make a function.
 def runCrawler():
     # Signal handling
     signal.signal(signal.SIGINT, signal_handler)
 
     with open ("prices.json", "w") as f:
+        # Initializing our dictionary.
+        # This will eventually become JSON.
+        exchanges = dict()
+        exchanges["kraken"] = dict()
+        exchanges["coinbase"] = dict()
+
         while(True):
-            kraken_prices = call_kraken()
-            if type(kraken_prices) is IOError:
-                # TODO: We got an error
-                raise(kraken_prices)
-                continue
+            err = call_kraken(exchanges["kraken"])
+            if type(err) is IOError:
+                # TODO: Handle errors properly
+                raise(err)
+                exit(1)
 
-            kraken_dict = dict()
-            for x in kraken_prices:
-                price_dict = dict()
-                price_dict["sell"] = x[2]
-                price_dict["buy"] = x[1]
+            err = call_coinbase(exchanges["coinbase"])
+            if err is not None:
+                exit(1)
 
-                kraken_dict[x[0]] = price_dict
-
-            coinbase_prices = call_coinbase()
-            if type(coinbase_prices) is IOError:
-                # TODO: We got an error
-                raise(coinbase_prices)
-                continue
-
-            coinbase_dict = dict()
-            for x in coinbase_prices:
-                price_dict = dict()
-                price_dict["sell"] = x[2]
-                price_dict["buy"] = x[1]
-
-                coinbase_dict[x[0]] = price_dict
-
-            result = dict()
-
-            # data: list of exchanges
-            result["kraken"] = kraken_dict
-            result["coinbase"] = coinbase_dict
-
-            final_string = json.dumps(result)
+            final_string = json.dumps(exchanges) # convert dict to JSON
 
             # Overwrite our data
             f.write(final_string)
             f.seek(0)
             time.sleep(2)
-            """
-            The resulting JSON should be of the following form:
-            "kraken": {
-                "BTC": {
-                    "buy": x,
-                    "sell": x
-                },
-                "ETH": {
-                    "buy": x,
-                    "sell": x
-                }
-            },
-            "coinbase": {
-                "BTC": {
-                    "buy": x,
-                    "sell": x
-                },
-                "ETH": {
-                    "buy": x,
-                    "sell": x
-                }
-            }
-            """
