@@ -40,12 +40,16 @@
 
 .exchange-logo {
     height: 60px;
-    padding-left: 55px;
+    /* padding-left: 55px; */
     width: 100px;
 }
 
 .exchange-logo-span {
-    padding: 30px;
+    /* padding: 30px; */
+    width: 50%;
+    display: inline-block;
+    position: relative;
+    text-align: -webkit-center;
 }
 
 .homepage {
