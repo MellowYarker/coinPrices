@@ -26,16 +26,22 @@
             </div>
 
             <div v-if="reqsMade" class="recommendations">
-                <recommendation text="buy"
-                    v-for="rec in buy_recs"
-                    v-bind:rec="rec"
-                    v-bind:exchanges="exchanges"
-                ></recommendation>
-                <recommendation text="sell"
-                    v-for="rec in sell_recs"
-                    v-bind:rec="rec"
-                    v-bind:exchanges="exchanges"
-                ></recommendation>
+                <div class="buy-or-sell">
+                    <div class="recommendation-title">Best Buy</div>
+                        <recommendation
+                            v-for="rec in buy_recs"
+                            v-bind:rec="rec"
+                            v-bind:exchanges="exchanges"
+                        ></recommendation>
+                    </div>
+                <div class="buy-or-sell">
+                    <div class="recommendation-title">Best Sell</div>
+                        <recommendation
+                            v-for="rec in sell_recs"
+                            v-bind:rec="rec"
+                            v-bind:exchanges="exchanges"
+                        ></recommendation>
+                    </div>
             </div>
         </div>
         <div v-else class="networkDown">
@@ -53,13 +59,13 @@
         // Our prices component
         Vue.component('price-display', {
             props: ['exchange'],
-                    template: '<span class="price-section"><div  class="currency" v-for="currency in exchange.currencies"><div>buy {{ currency.symbol }}: {{currency.buy}}USD</div><div>sell {{ currency.symbol }}: {{currency.sell}}USD</div></div></span>'
+            template: '<span class="price-section"><div  class="currency" v-for="currency in exchange.currencies"><div>buy {{ currency.symbol }}: {{currency.buy}} USD</div><div>sell {{ currency.symbol }}: {{currency.sell}} USD</div></div></span>'
         })
 
         // Our recommendations
         Vue.component('recommendation', {
-            props: ['text', 'rec'],
-                    template: '<span class="recommendation-section">We recommend you {{ text }} {{ rec.symbol }} on {{ rec.exchange }}.</span>'
+            props: ['rec'],
+            template: '<span class="recommendation-section"><div>{{ rec.symbol }} {{ rec.exchange }}</div></span>'
         })
 
         var app = new Vue({

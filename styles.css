@@ -1,8 +1,14 @@
-.connect-button {
-    left: 40%;
-    top: 5%;
-    height: 40px;
+.buy-or-sell {
+    display: inline-block;
     position: relative;
+    width: 50%;
+}
+
+.connect-button {
+    height: 40px;
+    left: 40%;
+    position: relative;
+    top: 5%;
 }
 
 .currency {
@@ -11,8 +17,8 @@
 
 .exchange-logo {
     height: 60px;
-    width: 100px;
     padding-left: 55px;
+    width: 100px;
 }
 
 .exchange-logo-span {
@@ -20,34 +26,39 @@
 }
 
 .homepage {
-    padding-top: 10%;
     padding-left: 40%;
+    padding-top: 10%;
     position: absolute;
     width: 500px;
-
 }
 
 .networkDown {
-    top: 50%;
     left: 50%;
+    top: 50%;
 }
 
 .price-section {
-    padding: 30px;
     display: inline-block;
+    padding: 30px;
 }
 
 .recommendations {
-    padding: 10px;
     border: 3px;
     border-color: black;
     border-style: solid;
+    display: flex;
+    padding: 10px;
     width: 474px; /* homepage width - recommendations.padding * 2 - recommendations.border * 2*/
 }
 
 .recommendation-section {
-    padding-top: 5px;
     display: block;
+    padding-top: 5px;
     position: relative;
+    text-align: center;
+}
+
+.recommendation-title {
+    padding-bottom: 10px;
     text-align: center;
 }
