@@ -1,3 +1,4 @@
+from decimal import Decimal, ROUND_HALF_UP
 import json, requests, signal, sys, time
 
 """
@@ -58,8 +59,9 @@ def call_kraken(exchange: dict):
 
         json = json["result"][key]
 
-        lowest_ask = json['a'][0]
-        highest_bid = json['b'][0]
+        cents = Decimal('0.01')
+        lowest_ask = str(Decimal(json['a'][0]).quantize(cents, ROUND_HALF_UP))
+        highest_bid = str(Decimal(json['b'][0]).quantize(cents, ROUND_HALF_UP))
 
         # Modifies or creates dictionary values for the given currency
         update_exchange(exchange, currency, lowest_ask, highest_bid)
