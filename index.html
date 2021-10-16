@@ -14,7 +14,7 @@
         <div v-if="deadNetwork" class="hide-stale-data">
             <button class="connect-button" v-on:click="attemptConnection">Attempt server connection</button>
             <div style="padding-top: 10px;">
-                <span style="display: flex; justify-content: center; align-items: center; text-align: center;">There seems to be an issue with the server. Try reconnecting.</span>
+                <span class="server-error">There seems to be an issue with the server. Try reconnecting.</span>
             </div>
         </div>
         <div v-else class="homepage">
@@ -55,11 +55,13 @@
     </div>
 
     <script>
-        // Our exchange title
+        // Our exchange logo
         Vue.component('exchange', {
             props: ['exchange'],
             template:   '<span class="exchange-logo-span">'+
-                            '<img class="exchange-logo" v-bind:src = exchange.image>' +
+                            '<a v-bind:href = exchange.link>' +
+                                '<img class="exchange-logo" v-bind:src = exchange.image>' +
+                            '</a>' +
                         '</span>'
         })
 
@@ -91,7 +93,7 @@
         var app = new Vue({
             el: '#app',
             data: {
-                message: 'You are not connected to the server, would you like to connect?',
+                message: null,
                 exchanges: [
                     {
                         id: 0,
@@ -113,7 +115,7 @@
                     deadNetwork: true,  // the connection to the server is down.
                     reqsMade: false     // true if we've made a recommendation
             },
-            created() {
+            beforeMount() {
                 // When we first load, connect to the server.
                 this.attemptConnection()
 

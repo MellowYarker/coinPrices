@@ -43,10 +43,15 @@
 }
 
 .exchange-logo-span {
-    width: 50%;
     display: inline-block;
     position: relative;
     text-align: -webkit-center;
+    width: 50%;
+}
+
+.hide-stale-data {
+    display: grid;
+    justify-content: center;
 }
 
 .homepage {
@@ -54,11 +59,6 @@
     padding-top: 5%;
     position: absolute;
     width: 500px;
-}
-
-.hide-stale-data {
-    display: grid;
-    justify-content: center;
 }
 
 .prices {
@@ -91,6 +91,13 @@
     font-size: 25px;
     font-weight: bold;
     padding-bottom: 10px;
+    text-align: center;
+}
+
+.server-error {
+    align-items: center;
+    display: flex;
+    justify-content: center;
     text-align: center;
 }
 
