@@ -6,7 +6,6 @@
 
 .connect-button {
     height: 40px;
-    left: 40%;
     position: relative;
     top: 5%;
 }
@@ -40,12 +39,10 @@
 
 .exchange-logo {
     height: 60px;
-    /* padding-left: 55px; */
     width: 100px;
 }
 
 .exchange-logo-span {
-    /* padding: 30px; */
     width: 50%;
     display: inline-block;
     position: relative;
@@ -54,14 +51,14 @@
 
 .homepage {
     padding-left: 35%;
-    padding-top: 10%;
+    padding-top: 5%;
     position: absolute;
     width: 500px;
 }
 
-.networkDown {
-    left: 50%;
-    top: 50%;
+.hide-stale-data {
+    display: grid;
+    justify-content: center;
 }
 
 .prices {

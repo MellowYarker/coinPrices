@@ -7,9 +7,17 @@
 </head>
 <body>
     <div id="app">
-        {{ message }}
+        <div>
+            <span style="display: flex; justify-content: center; align-items: center; text-align: center;">{{ message }}</span>
+        </div>
 
-        <div v-if="!deadNetwork" class="homepage">
+        <div v-if="deadNetwork" class="hide-stale-data">
+            <button class="connect-button" v-on:click="attemptConnection">Attempt server connection</button>
+            <div style="padding-top: 10px;">
+                <span style="display: flex; justify-content: center; align-items: center; text-align: center;">There seems to be an issue with the server. Try reconnecting.</span>
+            </div>
+        </div>
+        <div v-else class="homepage">
             <div>
                 <exchange
                     v-for="exchange in exchanges"
@@ -44,54 +52,89 @@
                 </div>
             </div>
         </div>
-        <div v-else class="networkDown">
-            <button class="connect-button" v-on:click="attemptConnection">Attempt server connection</button>
-        </div>
     </div>
 
     <script>
         // Our exchange title
         Vue.component('exchange', {
             props: ['exchange'],
-            template: '<span class="exchange-logo-span"><img class="exchange-logo" v-bind:src = exchange.image></span>'
+            template:   '<span class="exchange-logo-span">'+
+                            '<img class="exchange-logo" v-bind:src = exchange.image>' +
+                        '</span>'
         })
 
         // Our prices component
         Vue.component('price-display', {
             props: ['exchange'],
-            template: '<span class="price-section"><div class="currency" v-for="currency in exchange.currencies"><div class="trade"><a v-bind:href=exchange.link class="exchange-link-buy">buy</a> {{ currency.symbol }}: {{currency.buy}} USD</div><div class="trade"><a v-bind:href=exchange.link class="exchange-link-sell">sell</a> {{ currency.symbol }}: {{currency.sell}} USD</div></div></span>'
+            template:   '<span class="price-section">' +
+                            '<div class="currency" v-for="currency in exchange.currencies">' +
+                                '<div class="trade">' +
+                                    '<a v-bind:href=exchange.link class="exchange-link-buy">buy</a> ' +
+                                    '{{ currency.symbol }}: {{currency.buy}} USD' +
+                                '</div>'+
+                                '<div class="trade">' +
+                                    '<a v-bind:href=exchange.link class="exchange-link-sell">sell</a> ' +
+                                    '{{ currency.symbol }}: {{currency.sell}} USD' +
+                                '</div>' +
+                            '</div>'+
+                        '</span>'
         })
 
         // Our recommendations
         Vue.component('recommendation', {
             props: ['rec'],
-            template: '<span class="recommendation-section"><div>{{ rec.symbol }} {{ rec.exchange }}</div></span>'
+            template:   '<span class="recommendation-section">' +
+                            '<div>{{ rec.symbol }} {{ rec.exchange }}</div>' +
+                        '</span>'
         })
 
         var app = new Vue({
             el: '#app',
             data: {
-                message: 'Hello Vue!',
+                message: 'You are not connected to the server, would you like to connect?',
                 exchanges: [
                     {
                         id: 0,
                         name: "Kraken",
-                        currencies: [{symbol: "BTC", buy: 0, sell: 0}, {symbol: "ETH", buy: 0, sell: 0}],
+                        currencies: [{symbol: "BTC", buy: null, sell: null}, {symbol: "ETH", buy: null, sell: null}],
                         image: "images/kraken.jpg",
                         link: "https://www.kraken.com"
                     },
                     {
                         id: 1,
                         name: "Coinbase",
-                        currencies: [{symbol: "BTC", buy: 0, sell: 0}, {symbol: "ETH", buy: 0, sell: 0}],
+                        currencies: [{symbol: "BTC", buy: null, sell: null}, {symbol: "ETH", buy: null, sell: null}],
                         image: "images/coinbase.svg",
                         link: "https://www.coinbase.com"
                     }],
-                    // TODO: start this off empty!
-                    buy_recs: [{symbol: "BTC", exchange: ""}, {symbol: "ETH", exchange: ""}],
-                    sell_recs: [{symbol: "BTC", exchange: ""}, {symbol: "ETH", exchange: ""}],
+                    buy_recs: [{symbol: "BTC", exchange: null}, {symbol: "ETH", exchange: null}],
+                    sell_recs: [{symbol: "BTC", exchange: null}, {symbol: "ETH", exchange: null}],
+                    last_update: null,
                     deadNetwork: true,  // the connection to the server is down.
                     reqsMade: false     // true if we've made a recommendation
+            },
+            created() {
+                // When we first load, connect to the server.
+                this.attemptConnection()
+
+                // Try to request the data every 2 seconds.
+                // If the connection is down, we increment the number of seconds since
+                // the last update so the user know's their data is stale.
+                window.setInterval(() => {
+                    let now = new Date()
+                    if (this.last_update == null) {
+                        this.last_update = now
+                    }
+
+                    // We are connected
+                    if (!this.deadNetwork) {
+                        this.callBackend();
+                        this.last_update = now
+                    }
+
+                    let prev = this.last_update
+                    this.message = "Last update: " + Math.round(((now - prev) / 1000)) + " seconds ago.";
+                }, 2000)
             },
             methods: {
                 findRecommendations: function () {
@@ -127,58 +170,43 @@
                     }
                     this.reqsMade = true;
                 },
+
                 attemptConnection: function () {
-                    app.deadNetwork = false;
-                    checkPrices();
+                    // this.deadNetwork = false;
+                    this.message = "Updating"
+                    this.callBackend()
+                },
+
+                callBackend: function () {
+                    fetch("http://localhost:8000/prices.json")
+                    .then(response => {
+                        return response.json()
+                    })
+                    .then(json => {
+                        this.deadNetwork = false;
+                        let kraken = json["kraken"];
+                        let coinbase = json["coinbase"];
+
+                        this.exchanges[0].currencies[0].buy = kraken["BTC"]["buy"];
+                        this.exchanges[0].currencies[1].buy = kraken["ETH"]["buy"];
+                        this.exchanges[0].currencies[0].sell = kraken["BTC"]["sell"];
+                        this.exchanges[0].currencies[1].sell = kraken["ETH"]["sell"];
+
+                        this.exchanges[1].currencies[0].buy = coinbase["BTC"]["buy"];
+                        this.exchanges[1].currencies[1].buy = coinbase["ETH"]["buy"];
+                        this.exchanges[1].currencies[0].sell = coinbase["BTC"]["sell"];
+                        this.exchanges[1].currencies[1].sell = coinbase["ETH"]["sell"];
+
+                        this.findRecommendations();
+
+                        return;
+                    })
+                    .catch(response => {
+                        this.deadNetwork = true;
+                    })
                 }
             }
         });
-
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        async function checkPrices() {
-            // only iterate if the network is up
-            var i = 0;
-            while (!app.deadNetwork) {
-                if (app.reqsMade) {
-                    await sleep(2000);
-                }
-
-                i++;
-                app.message = "Checked prices " + i + " times.";
-
-                fetch("http://localhost:8000/prices.json")
-                .then(response => {
-                    return response.json()
-                })
-                .then(json => {
-                    app.deadNetwork = false;
-                    let kraken = json["kraken"];
-                    let coinbase = json["coinbase"];
-
-                    app.exchanges[0].currencies[0].buy = kraken["BTC"]["buy"];
-                    app.exchanges[0].currencies[1].buy = kraken["ETH"]["buy"];
-                    app.exchanges[0].currencies[0].sell = kraken["BTC"]["sell"];
-                    app.exchanges[0].currencies[1].sell = kraken["ETH"]["sell"];
-
-                    app.exchanges[1].currencies[0].buy = coinbase["BTC"]["buy"];
-                    app.exchanges[1].currencies[1].buy = coinbase["ETH"]["buy"];
-                    app.exchanges[1].currencies[0].sell = coinbase["BTC"]["sell"];
-                    app.exchanges[1].currencies[1].sell = coinbase["ETH"]["sell"];
-
-                    app.findRecommendations();
-                    return;
-                })
-                .catch(response => {
-                    app.deadNetwork = true;
-                })
-                if (!app.reqsMade) {
-                    await sleep(2000);
-                }
-            }
-        }
     </script>
 </body>
 </html>
