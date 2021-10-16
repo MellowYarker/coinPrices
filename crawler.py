@@ -126,7 +126,7 @@ def runCrawler():
     # Signal handling
     signal.signal(signal.SIGINT, signal_handler)
 
-    with open ("prices.json", "w") as f:
+    with open ("backend/prices.json", "w") as f:
         # Initializing our dictionary.
         # This will eventually become JSON.
         exchanges = dict()
