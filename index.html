@@ -40,6 +40,7 @@
                         v-for="rec in buy_recs"
                         v-bind:rec="rec"
                         v-bind:exchanges="exchanges"
+                        v-bind:key="rec.symbol"
                     ></recommendation>
                 </div>
                 <div class="buy-or-sell">
@@ -48,6 +49,7 @@
                         v-for="rec in sell_recs"
                         v-bind:rec="rec"
                         v-bind:exchanges="exchanges"
+                        v-bind:key="rec.symbol"
                     ></recommendation>
                 </div>
             </div>
