@@ -1,7 +1,9 @@
 from multiprocessing import Process, Queue
 import os, signal, sys
 
-import crawler, server # my files
+# my files
+from backend import crawler
+import server
 
 
 def initServer(q):

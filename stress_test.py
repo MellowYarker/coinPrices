@@ -3,7 +3,6 @@ import os, requests, signal, sys, time
 
 import server # my file
 
-
 def initServer(q):
     # Send the pid back to the parent.
     q.put(os.getpid())
@@ -32,7 +31,7 @@ if __name__ == "__main__":
 
     users = 1000
     users_per_sec_goal = 100
-    url = "http://localhost:8000/prices.json"
+    url = "http://localhost:8000/backend/prices.json"
 
     start = time.time()
 
