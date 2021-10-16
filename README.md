@@ -1,6 +1,8 @@
 # coinPrices
 A webpage that shows the prices on two crypto exchanges
 
+![alt text](images/webapp.png)
+
 # Usage
 To start the server, run `python3 run_app.py`.
 
