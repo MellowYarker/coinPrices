@@ -176,30 +176,36 @@
                 },
 
                 attemptConnection: function () {
-                    // this.deadNetwork = false;
                     this.message = "Updating"
                     this.callBackend()
                 },
 
                 callBackend: function () {
-                    fetch("http://localhost:8000/backend/prices.json")
+                    fetch("http://localhost:8080/api/data")
                     .then(response => {
                         return response.json()
                     })
                     .then(json => {
                         this.deadNetwork = false;
-                        let kraken = json["kraken"];
-                        let coinbase = json["coinbase"];
-
-                        this.exchanges[0].currencies[0].buy = kraken["BTC"]["buy"];
-                        this.exchanges[0].currencies[1].buy = kraken["ETH"]["buy"];
-                        this.exchanges[0].currencies[0].sell = kraken["BTC"]["sell"];
-                        this.exchanges[0].currencies[1].sell = kraken["ETH"]["sell"];
-
-                        this.exchanges[1].currencies[0].buy = coinbase["BTC"]["buy"];
-                        this.exchanges[1].currencies[1].buy = coinbase["ETH"]["buy"];
-                        this.exchanges[1].currencies[0].sell = coinbase["BTC"]["sell"];
-                        this.exchanges[1].currencies[1].sell = coinbase["ETH"]["sell"];
+                        let data = json["data"];
+                        let x = null;
+                        for (x in data) {
+                            let exchange = data[x];
+                            if (exchange["name"] == "Kraken") {
+                                this.exchanges[0].currencies[0].buy = exchange["BTC"]["buy"];
+                                this.exchanges[0].currencies[1].buy = exchange["ETH"]["buy"];
+                                this.exchanges[0].currencies[0].sell = exchange["BTC"]["sell"];
+                                this.exchanges[0].currencies[1].sell = exchange["ETH"]["sell"];
+                            } else if (exchange["name"] == "Coinbase") {
+                                this.exchanges[1].currencies[0].buy = exchange["BTC"]["buy"];
+                                this.exchanges[1].currencies[1].buy = exchange["ETH"]["buy"];
+                                this.exchanges[1].currencies[0].sell = exchange["BTC"]["sell"];
+                                this.exchanges[1].currencies[1].sell = exchange["ETH"]["sell"];
+                            } else {
+                                console.log("It no worky");
+                                console.log(x);
+                            }
+                        }
 
                         this.findRecommendations();
 
