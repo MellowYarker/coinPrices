@@ -33,7 +33,7 @@ This program will write to prices.json the following:
  *  Call the APIs, fill in our structs.
  * */
 use actix_web::client::Client;
-use serde::{self, Deserialize};
+use serde::{self, Serialize, Deserialize};
 use serde_json::{self, Value};
 
 #[derive (Debug)]
@@ -53,6 +53,26 @@ impl Currency {
     }
 }
 
+
+// TODO Use money lib
+#[derive (Serialize, Deserialize, Debug)]
+struct JsonCurrency {
+    buy: f32,
+    sell: f32,
+}
+
+#[derive (Serialize, Deserialize, Debug)]
+struct JsonExchange {
+    name: String,
+    BTC: JsonCurrency,
+    ETH: JsonCurrency,
+}
+
+#[derive (Serialize, Deserialize, Debug)]
+struct JsonResponse {
+    data: Vec<JsonExchange>,
+}
+
 #[derive (Debug)]
 struct Exchange {
     name: String, // exchange name
@@ -70,18 +90,25 @@ impl Exchange {
             currencies
         }
     }
+
+    fn to_json(&self) -> JsonExchange {
+        let BTC = JsonCurrency { buy: self.currencies[0].buy, sell: self.currencies[0].sell };
+        let ETH = JsonCurrency { buy: self.currencies[1].buy, sell: self.currencies[1].sell };
+
+        JsonExchange {name: self.name.clone(), BTC, ETH}
+    }
 }
 
 #[derive (Deserialize, Debug)]
-struct coinbaseData {
+struct CoinbaseData {
     base: String,
     currency: String,
     amount: String, // TODO convert this to currency 2 decimal places!
 }
 
 #[derive (Deserialize, Debug)]
-struct coinbaseResponse {
-    data: coinbaseData,
+struct CoinbaseResponse {
+    data: CoinbaseData,
 }
 
 
@@ -104,7 +131,7 @@ async fn call_coinbase(coinbase: &mut Exchange) {
 
             match response {
                 Ok(mut data) => {
-                    let json: Result<coinbaseResponse, _> = data.json().await;
+                    let json: Result<CoinbaseResponse, _> = data.json().await;
                     match json {
                         Ok(json_response) => {
                             let price = json_response.data.amount.parse::<f32>().unwrap();
@@ -187,6 +214,19 @@ async fn call_kraken(kraken: &mut Exchange) {
     }
 }
 
+fn build_json_response(coinbase: &mut Exchange, kraken: &mut Exchange) -> Result<String, serde_json::Error> {
+    let coinbase_json = coinbase.to_json();
+    let kraken_json = kraken.to_json();
+
+    let mut data: Vec<JsonExchange> = Vec::with_capacity(2);
+    data.push(coinbase_json);
+    data.push(kraken_json);
+
+    let response = JsonResponse { data };
+
+    serde_json::to_string(&response)
+}
+
 #[actix_web::main]
 async fn main() {
     let mut coinbase = Exchange::new("Coinbase");
@@ -198,6 +238,16 @@ async fn main() {
     // we might as well set them once and resuse.
     call_coinbase(&mut coinbase).await;
     call_kraken(&mut kraken).await;
+
     println!("{:?}", coinbase);
     println!("{:?}", kraken);
+
+    let json = match build_json_response(&mut coinbase, &mut kraken) {
+        Ok(data) => data,
+        Err(e) => {
+            eprintln!("{:?}", e);
+            panic!["Something went wrong creating JSON response."];
+        }
+    };
+    println!("{}", json);
 }
