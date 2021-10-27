@@ -29,12 +29,12 @@ This program will write to prices.json the following:
     }
  * */
 
-/* Things we want to do:
- *  Call the APIs, fill in our structs.
- * */
-use actix_web::{get, client::Client, http, HttpServer, HttpRequest, HttpResponse, web, App, Responder};
+use reqwest;
+use actix_web::{get, http, HttpServer, HttpResponse, web, App, Responder};
 use serde::{self, Serialize, Deserialize};
 use serde_json::{self, Value};
+use std::{time::Duration, sync::RwLock, thread};
+
 
 #[derive (Debug)]
 struct Currency {
@@ -112,9 +112,10 @@ struct CoinbaseResponse {
 }
 
 
-async fn call_coinbase(coinbase: &mut Exchange) {
+// async fn call_coinbase(coinbase: &mut Exchange) {
+fn call_coinbase(coinbase: &mut Exchange) {
     let fiat = "USD";
-    let client = Client::default();
+    // let client = Client::default();
 
     let actions = ["buy", "sell"];
 
@@ -123,15 +124,12 @@ async fn call_coinbase(coinbase: &mut Exchange) {
             let pair = format!["{}-{}", currency.symbol, fiat];
             let url = format!["https://api.coinbase.com/v2/prices/{}/{}", pair, action];
 
-            // Create request builder and send request
-            let response = client.get(url)
-                .header("User-Agent", "actix-web/3.0")
-                .send()
-                .await;
-
-            match response {
-                Ok(mut data) => {
-                    let json: Result<CoinbaseResponse, _> = data.json().await;
+            // Send a BLOCKING request.
+            // Can't do async because it won't impl Send,
+            // this makes the rust compiler angry.
+            match reqwest::blocking::get(url) {
+                Ok(data) => {
+                    let json: Result<CoinbaseResponse, _> = data.json();
                     match json {
                         Ok(json_response) => {
                             let price = json_response.data.amount.parse::<f32>().unwrap();
@@ -156,9 +154,8 @@ async fn call_coinbase(coinbase: &mut Exchange) {
     }
 }
 
-async fn call_kraken(kraken: &mut Exchange) {
+fn call_kraken(kraken: &mut Exchange) {
     let fiat = "USD";
-    let client = Client::default();
 
     for currency in &mut kraken.currencies {
         // Generate the url for each currency.
@@ -166,16 +163,11 @@ async fn call_kraken(kraken: &mut Exchange) {
         // but it would be tricky to access them in a loop.
         let pair = format!["{}{}", currency.symbol, fiat];
         let url = format!["https://api.kraken.com/0/public/Ticker?pair={}", pair];
+
         // Create request builder and send request
-        let response = client.get(url)
-            .header("User-Agent", "actix-web/3.0")
-            .send()
-            .await;
-
-
-        match response {
-            Ok(mut data) => {
-                let json_str: Vec<u8> = data.body().await.unwrap().to_ascii_lowercase();
+        match reqwest::blocking::get(url) {
+            Ok(data) => {
+                let json_str: Vec<u8> = data.bytes().unwrap().to_vec();
                 let v: Value = serde_json::from_str(
                     &std::str::from_utf8(&json_str).unwrap()
                 ).unwrap();
@@ -229,57 +221,68 @@ fn build_json_response(coinbase: &mut Exchange, kraken: &mut Exchange) -> Result
 
 // The state for our app.
 struct AppState {
-    exchange_data: Option<String>, // JSON String
+    // exchange_data: Option<String>, // JSON String
+    // exchange_data: Cell<Option<String>>, // JSON String
+    exchange_data: RwLock<Option<String>>, // JSON String
 }
 
 #[get("/api/data")]
 async fn serve_data(data: web::Data<AppState>) -> impl Responder {
-    match &data.exchange_data {
+    // TODO: Might need to acquire mutex lock first...
+    let inner = data.exchange_data.read().unwrap();
+    match &*inner {
         Some(json) => {
-            return HttpResponse::Ok()
+            let response = HttpResponse::Ok()
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(json);
+            return response;
         },
         None => {
             // TODO Return 404 or something?
-            return HttpResponse::InternalServerError().body("No data found.");
+            let response = HttpResponse::InternalServerError().body("No data found.");
+            return response;
         }
     }
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Contained in here is a call to the exchanges
-    /////////////////////////////////////////////////////////////////////////////////////
-    let mut coinbase = Exchange::new("Coinbase");
-    let mut kraken = Exchange::new("Kraken");
+    let json_data = web::Data::new(AppState {
+        exchange_data: RwLock::new(None)
+    });
 
-    println!("{:?}", coinbase);
-    println!("{:?}", kraken);
-    // We know the URLs don't change,
-    // we might as well set them once and resuse.
-    call_coinbase(&mut coinbase).await;
-    call_kraken(&mut kraken).await;
+    // At this point, we want to create a new thread,
+    // move a clone of json_data in (it uses Arc anyways)
+    // and update is periodically
 
-    println!("{:?}", coinbase);
-    println!("{:?}", kraken);
+    let app_state_copy = json_data.clone();
 
-    let json = match build_json_response(&mut coinbase, &mut kraken) {
-        Ok(data) => data,
-        Err(e) => {
-            eprintln!("{:?}", e);
-            panic!["Something went wrong creating JSON response."];
+    thread::spawn(move || {
+        // Contained in here is a call to the exchanges
+        let mut coinbase = Exchange::new("Coinbase");
+        let mut kraken = Exchange::new("Kraken");
+
+        loop {
+            call_coinbase(&mut coinbase);
+            call_kraken(&mut kraken);
+
+            let json = match build_json_response(&mut coinbase, &mut kraken) {
+                Ok(data) => data,
+                Err(e) => {
+                    eprintln!("{:?}", e);
+                    panic!["Something went wrong creating JSON response."];
+                }
+            };
+            let mut w = app_state_copy.exchange_data.write().unwrap();
+            *w = Some(json);
+            drop(w);
+            thread::sleep(Duration::from_secs(2));
         }
-    };
-    println!("{}", json);
-    /////////////////////////////////////////////////////////////////////////////////////
+    });
 
     HttpServer::new(move ||
         App::new()
-            .data(AppState {
-                exchange_data: None
-                // exchange_data: Some(json.clone())
-            })
+            .app_data(json_data.clone())
             .service(serve_data)
     )
     .bind("127.0.0.1:8080")?
