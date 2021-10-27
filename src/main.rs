@@ -32,7 +32,7 @@ This program will write to prices.json the following:
 /* Things we want to do:
  *  Call the APIs, fill in our structs.
  * */
-use actix_web::client::Client;
+use actix_web::{get, client::Client, http, HttpServer, HttpRequest, HttpResponse, web, App, Responder};
 use serde::{self, Serialize, Deserialize};
 use serde_json::{self, Value};
 
@@ -114,7 +114,7 @@ struct CoinbaseResponse {
 
 async fn call_coinbase(coinbase: &mut Exchange) {
     let fiat = "USD";
-    let mut client = Client::default();
+    let client = Client::default();
 
     let actions = ["buy", "sell"];
 
@@ -158,7 +158,7 @@ async fn call_coinbase(coinbase: &mut Exchange) {
 
 async fn call_kraken(kraken: &mut Exchange) {
     let fiat = "USD";
-    let mut client = Client::default();
+    let client = Client::default();
 
     for currency in &mut kraken.currencies {
         // Generate the url for each currency.
@@ -227,8 +227,30 @@ fn build_json_response(coinbase: &mut Exchange, kraken: &mut Exchange) -> Result
     serde_json::to_string(&response)
 }
 
+// The state for our app.
+struct AppState {
+    exchange_data: Option<String>, // JSON String
+}
+
+#[get("/api/data")]
+async fn serve_data(data: web::Data<AppState>) -> impl Responder {
+    match &data.exchange_data {
+        Some(json) => {
+            return HttpResponse::Ok()
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(json);
+        },
+        None => {
+            // TODO Return 404 or something?
+            return HttpResponse::InternalServerError().body("No data found.");
+        }
+    }
+}
+
 #[actix_web::main]
-async fn main() {
+async fn main() -> std::io::Result<()> {
+    // Contained in here is a call to the exchanges
+    /////////////////////////////////////////////////////////////////////////////////////
     let mut coinbase = Exchange::new("Coinbase");
     let mut kraken = Exchange::new("Kraken");
 
@@ -250,4 +272,17 @@ async fn main() {
         }
     };
     println!("{}", json);
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    HttpServer::new(move ||
+        App::new()
+            .data(AppState {
+                exchange_data: None
+                // exchange_data: Some(json.clone())
+            })
+            .service(serve_data)
+    )
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
 }
