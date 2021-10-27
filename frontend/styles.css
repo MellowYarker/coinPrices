@@ -1,0 +1,106 @@
+.buy-or-sell {
+    display: inline-block;
+    position: relative;
+    width: 50%;
+}
+
+.connect-button {
+    height: 40px;
+    position: relative;
+    top: 5%;
+}
+
+.currency {
+    padding-left: 10px;
+    padding-bottom: 15px;
+}
+
+.exchange-link-buy {
+    background: lightgrey;
+    border-color: lightgrey;
+    border-radius: 5px;
+    border-style: solid;
+    color: cornflowerblue;
+    padding-left: 4px;
+    padding-right: 4px;
+    text-decoration: none;
+}
+
+.exchange-link-sell {
+    background: lightgrey;
+    border-color: lightgrey;
+    border-radius: 5px;
+    border-style: solid;
+    color: orangered;
+    padding-left: 4px;
+    padding-right: 4px;
+    text-decoration: none;
+}
+
+.exchange-logo {
+    height: 60px;
+    width: 100px;
+}
+
+.exchange-logo-span {
+    display: inline-block;
+    position: relative;
+    text-align: -webkit-center;
+    width: 50%;
+}
+
+.hide-stale-data {
+    display: grid;
+    justify-content: center;
+}
+
+.homepage {
+    padding-left: 35%;
+    padding-top: 5%;
+    position: absolute;
+    width: 500px;
+}
+
+.prices {
+    position: relative;
+    display: inline-flex;
+}
+
+.price-section {
+    display: inline-block;
+    padding: 30px;
+}
+
+.recommendations {
+    border: 3px;
+    border-color: black;
+    border-style: solid;
+    display: flex;
+    padding: 10px;
+    width: 474px; /* homepage width - recommendations.padding * 2 - recommendations.border * 2*/
+}
+
+.recommendation-section {
+    display: block;
+    padding-top: 5px;
+    position: relative;
+    text-align: center;
+}
+
+.recommendation-title {
+    font-size: 25px;
+    font-weight: bold;
+    padding-bottom: 10px;
+    text-align: center;
+}
+
+.server-error {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
+
+.trade {
+    padding-bottom: 10px;
+}
