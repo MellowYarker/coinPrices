@@ -1,7 +1,7 @@
 # coinPrices
 A webpage that shows the prices on two crypto exchanges
 
-![alt text](images/webapp.png)
+![alt text](frontend/images/webapp.png)
 
 Note that the **buy** price is equivalent to the *lowest ask*. That is, if you were to buy an asset right now, the lowest price you can get is the lowest price someone is willing to sell it for. This is why the buy price is higher than the sell price (sell = *highest bid*, i.e the most someone is willing to pay).
 # Usage
