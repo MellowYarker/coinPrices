@@ -234,6 +234,8 @@ async fn serve_data(data: web::Data<AppState>) -> impl Responder {
         Some(json) => {
             let response = HttpResponse::Ok()
                 .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+                .header(http::header::ACCESS_CONTROL_ALLOW_METHODS, "GET")
                 .body(json);
             return response;
         },
