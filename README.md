@@ -1,3 +1,5 @@
+# UPDATE
+The backend was originally a basic Python script running on http.server. It has been rewritten in Rust, and uses the Actix-web framework.
 # coinPrices
 A webpage that shows the prices on two crypto exchanges
 
