@@ -1,7 +1,7 @@
 #### *Are there any sub-optimal choices( or short cuts taken due to limited time ) in your implementation?*
 The CSS isn't great, the same look could be achieved in a much smaller file. Also some things aren't aligned perfectly, and this page wouldn't look great on devices of different sizes. ~~I also didn't use a backend framework like node or django, I knew the backend could be pretty basic so I didn't think the added complexity was necessary. I also think the file structure could be redone, it's a bit messy looking because python's `http.server` will serve the current directory.~~
 
-The backend has been rewritten in Rust using Actix-Web, and both the JSON data, and the frontend are served through the rust webserver.
+The backend has been rewritten in Rust using Actix-Web. Both the JSON data and the frontend are served through the rust webserver.
 
 #### *Is any part of it over-designed? ( It is fine to over-design to showcase your skills as long as you are clear about it)*
 UPDATED:
