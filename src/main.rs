@@ -1,36 +1,5 @@
-/*
-Kraken's API:
-    https://api.kraken.com/0/public/Ticker?pair=BTCUSD
-
-Coinbase's API:
-    https://api.coinbase.com/v2/prices/BTC-USD/buy
-    https://api.coinbase.com/v2/prices/ETH-USD/sell
-
-This program will write to prices.json the following:
-    "kraken": {
-        "BTC": {
-            "buy": x,
-            "sell": x
-        },
-        "ETH": {
-            "buy": x,
-            "sell": x
-        }
-    },
-    "coinbase": {
-        "BTC": {
-            "buy": x,
-            "sell": x
-        },
-        "ETH": {
-            "buy": x,
-            "sell": x
-        }
-    }
- * */
-
-use reqwest;
 use actix_web::{get, http, HttpServer, HttpResponse, web, App, Responder};
+use reqwest::blocking;
 use serde::{self, Serialize, Deserialize};
 use serde_json::{self, Value};
 use std::{time::Duration, sync::RwLock, thread};
@@ -81,9 +50,7 @@ struct Exchange {
 
 impl Exchange {
     fn new(name: &str) -> Self {
-        let mut currencies: Vec<Currency> = Vec::with_capacity(2);
-        currencies.push(Currency::new("BTC"));
-        currencies.push(Currency::new("ETH"));
+        let currencies: Vec<Currency> = vec![Currency::new("BTC"), Currency::new("ETH")];
 
         Exchange {
             name: name.to_string(),
@@ -127,7 +94,7 @@ fn call_coinbase(coinbase: &mut Exchange) {
             // Send a BLOCKING request.
             // Can't do async because it won't impl Send,
             // this makes the rust compiler angry.
-            match reqwest::blocking::get(url) {
+            match blocking::get(url) {
                 Ok(data) => {
                     let json: Result<CoinbaseResponse, _> = data.json();
                     match json {
@@ -165,7 +132,7 @@ fn call_kraken(kraken: &mut Exchange) {
         let url = format!["https://api.kraken.com/0/public/Ticker?pair={}", pair];
 
         // Create request builder and send request
-        match reqwest::blocking::get(url) {
+        match blocking::get(url) {
             Ok(data) => {
                 let json_str: Vec<u8> = data.bytes().unwrap().to_vec();
                 let v: Value = serde_json::from_str(
@@ -210,9 +177,7 @@ fn build_json_response(coinbase: &mut Exchange, kraken: &mut Exchange) -> Result
     let coinbase_json = coinbase.to_json();
     let kraken_json = kraken.to_json();
 
-    let mut data: Vec<JsonExchange> = Vec::with_capacity(2);
-    data.push(coinbase_json);
-    data.push(kraken_json);
+    let data: Vec<JsonExchange> = vec![coinbase_json, kraken_json];
 
     let response = JsonResponse { data };
 
@@ -221,28 +186,24 @@ fn build_json_response(coinbase: &mut Exchange, kraken: &mut Exchange) -> Result
 
 // The state for our app.
 struct AppState {
-    // exchange_data: Option<String>, // JSON String
-    // exchange_data: Cell<Option<String>>, // JSON String
     exchange_data: RwLock<Option<String>>, // JSON String
 }
 
 #[get("/api/data")]
 async fn serve_data(data: web::Data<AppState>) -> impl Responder {
-    // TODO: Might need to acquire mutex lock first...
+    // Readers have shared access, will stall when writer has lock.
     let inner = data.exchange_data.read().unwrap();
     match &*inner {
         Some(json) => {
-            let response = HttpResponse::Ok()
+            HttpResponse::Ok()
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                 .header(http::header::ACCESS_CONTROL_ALLOW_METHODS, "GET")
-                .body(json);
-            return response;
+                .body(json)
         },
         None => {
             // TODO Return 404 or something?
-            let response = HttpResponse::InternalServerError().body("No data found.");
-            return response;
+            HttpResponse::InternalServerError().body("No data found.")
         }
     }
 }
@@ -256,11 +217,10 @@ async fn style() -> impl Responder {
             return HttpResponse::InternalServerError().body("Failed to fetch styles.css");
         }
     };
-    let response = HttpResponse::Ok()
+    HttpResponse::Ok()
         .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .header(http::header::ACCESS_CONTROL_ALLOW_METHODS, "GET")
-        .body(file);
-    return response;
+        .body(file)
 }
 
 #[get("/images/{filename}")]
@@ -292,7 +252,7 @@ async fn image(web::Path(filename): web::Path<String>) -> impl Responder {
             .body(vec);
     }
 
-    return HttpResponse::InternalServerError().body(format!["Failed to fetch {}", filename]);
+    HttpResponse::InternalServerError().body(format!["Failed to fetch {}", filename])
 }
 
 #[get("/")]
@@ -304,27 +264,24 @@ async fn index() -> impl Responder {
             return HttpResponse::InternalServerError().body("Failed to fetch index.html");
         }
     };
-    let response = HttpResponse::Ok()
+    HttpResponse::Ok()
         .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .header(http::header::ACCESS_CONTROL_ALLOW_METHODS, "GET")
-        .body(file);
-    return response;
+        .body(file)
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let json_data = web::Data::new(AppState {
-        exchange_data: RwLock::new(None)
+        exchange_data: RwLock::new(None) // No JSON by default
     });
 
-    // At this point, we want to create a new thread,
-    // move a clone of json_data in (it uses Arc anyways)
-    // and update is periodically
-
+    // This is stored in an Arc, it's thread safe
+    // and cloning == incrementing references.
     let app_state_copy = json_data.clone();
 
+    // Thread that calls exchanges once every 3 sec
     thread::spawn(move || {
-        // Contained in here is a call to the exchanges
         let mut coinbase = Exchange::new("Coinbase");
         let mut kraken = Exchange::new("Kraken");
 
@@ -339,20 +296,24 @@ async fn main() -> std::io::Result<()> {
                     panic!["Something went wrong creating JSON response."];
                 }
             };
+            // Acquire the write lock, will wait until all readers release.
+            // No readers can acquire lock after writer implies it wants
+            // the lock.
             let mut w = app_state_copy.exchange_data.write().unwrap();
             *w = Some(json);
-            drop(w);
-            thread::sleep(Duration::from_secs(2));
+            drop(w); // Explicit drop so that we don't wait 3 sec duration to drop
+
+            thread::sleep(Duration::from_secs(3));
         }
     });
 
     HttpServer::new(move ||
         App::new()
             .app_data(json_data.clone())
-            .service(index)
-            .service(image)
-            .service(style)
-            .service(serve_data)
+            .service(index) // Page for users, will remove once frontend hosted elsewhere
+            .service(image) // Store images here until frontend hosted elsewhere
+            .service(style) // Store css here until frontend hosted elsewhere
+            .service(serve_data) // api endpoint, this stays
     )
     .bind("127.0.0.1:8080")?
     .run()
