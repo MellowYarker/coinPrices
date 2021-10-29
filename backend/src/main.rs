@@ -315,7 +315,7 @@ async fn main() -> std::io::Result<()> {
             .service(style) // Store css here until frontend hosted elsewhere
             .service(serve_data) // api endpoint, this stays
     )
-    .bind("127.0.0.1:8080")?
+    .bind("127.0.0.1:8989")?
     .run()
     .await
 }
