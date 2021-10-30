@@ -9,7 +9,7 @@ Note that the **buy** price is equivalent to the *lowest ask*. That is, if you w
 # Usage
 To start the server, run `sh run.sh`.
 
-This will execute `cargo run --release`, which may need to download and compile some crates from crates.io.
+This will execute `cargo run --release`, which may need to download and compile some crates from crates.io, as well as `npm run serve`.
 
 Once the program is running, open `localhost:8080` in your browser to view the webpage.
 

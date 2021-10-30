@@ -3,7 +3,7 @@ import requests, time
 if __name__ == "__main__":
     users = 1000
     users_per_sec_goal = 100
-    url = "http://localhost:8080/api/data"
+    url = "http://localhost:8989/api/data"
 
     start = time.time()
 

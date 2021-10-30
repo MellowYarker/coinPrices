@@ -208,68 +208,6 @@ async fn serve_data(data: web::Data<AppState>) -> impl Responder {
     }
 }
 
-#[get("/styles.css")]
-async fn style() -> impl Responder {
-    let bytes = include_bytes!["../../frontend/styles.css"];
-    let file = match String::from_utf8(bytes.to_vec()) {
-        Ok(data) => data,
-        Err(_) => {
-            return HttpResponse::InternalServerError().body("Failed to fetch styles.css");
-        }
-    };
-    HttpResponse::Ok()
-        .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-        .header(http::header::ACCESS_CONTROL_ALLOW_METHODS, "GET")
-        .body(file)
-}
-
-#[get("/images/{filename}")]
-async fn image(web::Path(filename): web::Path<String>) -> impl Responder {
-    let mut kraken_vec = None;
-    let mut coinbase_vec = None;
-    match &filename[..] {
-        "kraken.jpg" => {
-            kraken_vec = Some(include_bytes!["../../frontend/images/kraken.jpg"].to_vec());
-        },
-        "coinbase.svg" => {
-            coinbase_vec = Some(include_bytes!["../../frontend/images/coinbase.svg"].to_vec());
-        },
-        _ => {
-            return HttpResponse::InternalServerError().body(format!["Failed to fetch {}", filename]);
-        }
-    };
-
-    if let Some(vec) = kraken_vec {
-        return HttpResponse::Ok()
-            .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-            .header(http::header::ACCESS_CONTROL_ALLOW_METHODS, "GET")
-            .body(vec);
-    } else if let Some(vec) = coinbase_vec {
-        return HttpResponse::Ok()
-            .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-            .header(http::header::ACCESS_CONTROL_ALLOW_METHODS, "GET")
-            .header(http::header::CONTENT_TYPE, "image/svg+xml")
-            .body(vec);
-    }
-
-    HttpResponse::InternalServerError().body(format!["Failed to fetch {}", filename])
-}
-
-#[get("/")]
-async fn index() -> impl Responder {
-    let bytes = include_bytes!["../../frontend/index.html"];
-    let file = match String::from_utf8(bytes.to_vec()) {
-        Ok(data) => data,
-        Err(_) => {
-            return HttpResponse::InternalServerError().body("Failed to fetch index.html");
-        }
-    };
-    HttpResponse::Ok()
-        .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-        .header(http::header::ACCESS_CONTROL_ALLOW_METHODS, "GET")
-        .body(file)
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let json_data = web::Data::new(AppState {
@@ -310,9 +248,6 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move ||
         App::new()
             .app_data(json_data.clone())
-            .service(index) // Page for users, will remove once frontend hosted elsewhere
-            .service(image) // Store images here until frontend hosted elsewhere
-            .service(style) // Store css here until frontend hosted elsewhere
             .service(serve_data) // api endpoint, this stays
     )
     .bind("127.0.0.1:8989")?
