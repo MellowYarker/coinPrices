@@ -4,24 +4,7 @@ use serde::{self, Serialize, Deserialize};
 use serde_json::{self, Value};
 use std::{time::Duration, sync::RwLock, thread};
 
-
-#[derive (Debug)]
-struct Currency {
-    symbol: String,
-    buy: f32, // TODO use money lib
-    sell: f32, // TODO use money lib
-}
-
-impl Currency {
-    fn new(symbol: &str) -> Self {
-        Currency{
-            symbol: symbol.to_string(),
-            buy: 0.0,
-            sell: 0.0,
-        }
-    }
-}
-
+/* The following (Json-prefixed) structs are used for (de)serializing JSON */
 
 // TODO Use money lib
 #[derive (Serialize, Deserialize, Debug)]
@@ -42,6 +25,24 @@ struct JsonResponse {
     data: Vec<JsonExchange>,
 }
 
+
+#[derive (Debug)]
+struct Currency {
+    symbol: String,
+    buy: f32, // TODO use money lib
+    sell: f32, // TODO use money lib
+}
+
+impl Currency {
+    fn new(symbol: &str) -> Self {
+        Currency {
+            symbol: symbol.to_string(), // (BTC / ETH)
+            buy: 0.0,
+            sell: 0.0,
+        }
+    }
+}
+
 #[derive (Debug)]
 struct Exchange {
     name: String, // exchange name
@@ -58,6 +59,20 @@ impl Exchange {
         }
     }
 
+    // Converts this exchange struct to JSON
+    /*
+     *  {
+     *     name: exchange's name,
+     *     BTC: {
+     *          buy: x_1,
+     *          sell: x_1,
+     *     },
+     *     ETH: {
+     *          buy: y_1,
+     *          sell: y_2,
+     *     },
+     *  }
+     **/
     fn to_json(&self) -> JsonExchange {
         let BTC = JsonCurrency { buy: self.currencies[0].buy, sell: self.currencies[0].sell };
         let ETH = JsonCurrency { buy: self.currencies[1].buy, sell: self.currencies[1].sell };
@@ -66,6 +81,9 @@ impl Exchange {
     }
 }
 
+/* These Coinbase prefixed structs are for
+ * deserializing JSON from coinbase's API.
+ **/
 #[derive (Deserialize, Debug)]
 struct CoinbaseData {
     base: String,
@@ -79,10 +97,13 @@ struct CoinbaseResponse {
 }
 
 
-// async fn call_coinbase(coinbase: &mut Exchange) {
+/* Send a blocking GET request to Coinbase's API.
+ * We can't use async here because it doesn't
+ * implement the SEND trait, and we're using
+ * multiple threads.
+ **/
 fn call_coinbase(coinbase: &mut Exchange) {
     let fiat = "USD";
-    // let client = Client::default();
 
     let actions = ["buy", "sell"];
 
@@ -92,8 +113,6 @@ fn call_coinbase(coinbase: &mut Exchange) {
             let url = format!["https://api.coinbase.com/v2/prices/{}/{}", pair, action];
 
             // Send a BLOCKING request.
-            // Can't do async because it won't impl Send,
-            // this makes the rust compiler angry.
             match blocking::get(url) {
                 Ok(data) => {
                     let json: Result<CoinbaseResponse, _> = data.json();
@@ -121,6 +140,11 @@ fn call_coinbase(coinbase: &mut Exchange) {
     }
 }
 
+/* Send a blocking GET request to Kraken's API.
+ * We can't use async here because it doesn't
+ * implement the SEND trait, and we're using
+ * multiple threads.
+ **/
 fn call_kraken(kraken: &mut Exchange) {
     let fiat = "USD";
 
@@ -131,7 +155,7 @@ fn call_kraken(kraken: &mut Exchange) {
         let pair = format!["{}{}", currency.symbol, fiat];
         let url = format!["https://api.kraken.com/0/public/Ticker?pair={}", pair];
 
-        // Create request builder and send request
+        // Send blocking request.
         match blocking::get(url) {
             Ok(data) => {
                 let json_str: Vec<u8> = data.bytes().unwrap().to_vec();
@@ -139,10 +163,14 @@ fn call_kraken(kraken: &mut Exchange) {
                     &std::str::from_utf8(&json_str).unwrap()
                 ).unwrap();
 
-                // The key after "result" is the trading pair
-                // as listed on Kraken. Rust JSON stuff is weird,
-                // so we can't have "typed" JSON. This is how
-                // we access the key.
+                /* The key after "result:" is the trading pair
+                 * as listed on Kraken (Ex. XXBTZUSD).
+                 *
+                 * Becaue Serde JSON's typed json wants to know
+                 * the key name in advance, we would need different
+                 * structs for each currency pair. Instead, we just
+                 * use UNtyped json (treat as String), and extract the symbol here.
+                **/
                 let symbol = v["result"]
                     .as_object()
                         .unwrap()
@@ -162,7 +190,7 @@ fn call_kraken(kraken: &mut Exchange) {
                 // TODO Use currency 2 decimal places
                 currency.sell = match &v["result"][symbol]["b"][0] {
                     Value::String(price) => price.parse::<f32>().unwrap(),
-                    _ => panic!["Couldn't extract lowest ask!"]
+                    _ => panic!["Couldn't extract highest bid!"]
                 };
             },
             Err(e) => {
@@ -173,6 +201,9 @@ fn call_kraken(kraken: &mut Exchange) {
     }
 }
 
+/* Here, we JSONify our exchange structs, and merge them to create
+ * the final JSON response that we will serve to clients.
+ **/
 fn build_json_response(coinbase: &mut Exchange, kraken: &mut Exchange) -> Result<String, serde_json::Error> {
     let coinbase_json = coinbase.to_json();
     let kraken_json = kraken.to_json();
@@ -184,11 +215,14 @@ fn build_json_response(coinbase: &mut Exchange, kraken: &mut Exchange) -> Result
     serde_json::to_string(&response)
 }
 
+/* Everything below this line is Actix-web stuff. */
+
 // The state for our app.
 struct AppState {
     exchange_data: RwLock<Option<String>>, // JSON String
 }
 
+/* API endpoint that client's make requests to. */
 #[get("/api/data")]
 async fn serve_data(data: web::Data<AppState>) -> impl Responder {
     // Readers have shared access, will stall when writer has lock.
@@ -218,7 +252,7 @@ async fn main() -> std::io::Result<()> {
     // and cloning == incrementing references.
     let app_state_copy = json_data.clone();
 
-    // Thread that calls exchanges once every 3 sec
+    // Thread that tries to update data from exchanges once every 3 sec.
     thread::spawn(move || {
         let mut coinbase = Exchange::new("Coinbase");
         let mut kraken = Exchange::new("Kraken");
