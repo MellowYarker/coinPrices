@@ -12,7 +12,7 @@ In order to run this software, you will need to install the following:
 2. [Node](https://nodejs.org/en/)
 3. [VueCLI](https://cli.vuejs.org/guide/installation.html)
 
-Once you've installed these, you can move to the next section.
+Once you've installed these, run `sh build.sh`.
 # Usage
 To start the server, run `sh run.sh`.
 
