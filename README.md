@@ -13,7 +13,7 @@ In order to run this software, you will need to install the following:
 3. VueCLI + Vue-cli-service
 - `npm install -g @vue/cli @vue/cli-service-global`
 
-Once you've installed these, run `sh build.sh`.
+Once you've installed these, you can go to the next section.
 # Usage
 To start the server, run `sh run.sh`.
 
