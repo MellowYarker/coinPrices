@@ -6,6 +6,13 @@ A webpage that shows the prices on two crypto exchanges
 ![alt text](frontend/images/webapp.png)
 
 Note that the **buy** price is equivalent to the *lowest ask*. That is, if you were to buy an asset right now, the lowest price you can get is the lowest price someone is willing to sell it for. This is why the buy price is higher than the sell price (sell = *highest bid*, i.e the most someone is willing to pay).
+# Dependencies
+In order to run this software, you will need to install the following:
+1. [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
+2. [Node](https://nodejs.org/en/)
+3. [VueCLI](https://cli.vuejs.org/guide/installation.html)
+
+Once you've installed these, you can move to the next section.
 # Usage
 To start the server, run `sh run.sh`.
 
