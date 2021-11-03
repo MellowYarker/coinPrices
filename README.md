@@ -10,7 +10,8 @@ Note that the **buy** price is equivalent to the *lowest ask*. That is, if you w
 In order to run this software, you will need to install the following:
 1. [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 2. [Node](https://nodejs.org/en/)
-3. [VueCLI](https://cli.vuejs.org/guide/installation.html)
+3. VueCLI + Vue-cli-service
+- `npm install -g @vue/cli @vue/cli-service-global`
 
 Once you've installed these, run `sh build.sh`.
 # Usage
