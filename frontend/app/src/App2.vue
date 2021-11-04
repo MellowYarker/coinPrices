@@ -61,7 +61,7 @@ export default {
               sell: null
             }
           ],
-          image: "../assets/kraken.jpg",
+          image: require("./assets/kraken.jpg"),
           link: "https://www.kraken.com"
         },
         {
@@ -79,7 +79,7 @@ export default {
               sell: null
             }
           ],
-          image: "../assets/coinbase.svg",
+          image: require("./assets/coinbase.svg"),
           link: "https://www.coinbase.com"
         }
       ],
