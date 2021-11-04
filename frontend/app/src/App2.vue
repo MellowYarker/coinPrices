@@ -3,13 +3,8 @@
     <div>
         <span style="display: flex; justify-content: center; align-items: center; text-align: center;">{{ status_message }}</span>
     </div>
-    <!-- TODO: DeadNetwork Component -->
-    <div v-if="deadNetwork" class="hide-stale-data">
-      <button class="connect-button" @click="attemptConnection">Attempt server connection</button>
-      <div style="padding-top: 10px;">
-        <span class="server-error">There seems to be an issue with the server. Try reconnecting.</span>
-      </div>
-    </div>
+    <Disconnected v-if="deadNetwork" @requestConnection="attemptConnection"/>
+
     <!-- TODO: Do we want a Homepage component? -->
     <div v-else class="homepage">
       <ExchangeBanner
@@ -29,6 +24,7 @@
 
 <script>
 import ExchangeBanner from './components/ExchangeBanner.vue'
+import Disconnected from './components/Disconnected.vue'
 import PriceDisplay from './components/PriceSection.vue'
 import Recommendations from './components/Recommendations.vue'
 
@@ -36,6 +32,7 @@ export default {
   name: 'App2',
   components: {
     ExchangeBanner,
+    Disconnected,
     PriceDisplay,
     Recommendations
   },
@@ -215,28 +212,10 @@ export default {
 </script>
 
 <style>
-  .connect-button {
-    height: 40px;
-    position: relative;
-    top: 5%;
-  }
-
-  .hide-stale-data {
-    display: grid;
-    justify-content: center;
-  }
-
   .homepage {
     padding-left: 35%;
     padding-top: 5%;
     position: absolute;
     width: 500px;
-  }
-
-  .server-error {
-    align-items: center;
-    display: flex;
-    justify-content: center;
-    text-align: center;
   }
 </style>
