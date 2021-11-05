@@ -176,7 +176,8 @@ export default {
     },
 
     callBackend: function () {
-      fetch("http://localhost:8989/api/data")
+      // fetch("http://localhost:8989/api/data")
+      fetch("https://pure-plateau-82618.herokuapp.com/api/data")
       .then(response => {
         return response.json()
       })
