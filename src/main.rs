@@ -2,7 +2,7 @@ use actix_web::{get, http, HttpServer, HttpResponse, web, App, Responder};
 use reqwest::blocking;
 use serde::{self, Serialize, Deserialize};
 use serde_json::{self, Value};
-use std::{time::Duration, sync::RwLock, thread};
+use std::{env, time::Duration, sync::RwLock, thread};
 
 /* The following (Json-prefixed) structs are used for (de)serializing JSON */
 
@@ -279,12 +279,16 @@ async fn main() -> std::io::Result<()> {
         }
     });
 
+    let HOST = env::var("HOST").expect("Host not set");
+    let PORT = env::var("PORT").expect("Port not set");
+
     HttpServer::new(move ||
         App::new()
             .app_data(json_data.clone())
             .service(serve_data) // api endpoint, this stays
     )
-    .bind("127.0.0.1:8989")?
+    // .bind("127.0.0.1:8989")?
+    .bind(format!("{}:{}", HOST, PORT))?
     .run()
     .await
 }
