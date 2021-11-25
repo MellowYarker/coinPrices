@@ -13,11 +13,11 @@ We now maintain the JSON in memory, and serve it at the `/api/data` endpoint.
 Also, the thread that fetches data from the exchanges just overwrites any past data, so we don't really worry about persistence. Currently, the frontend isn't that complicated since its only job is to read the data from the server, determine the recommendations, and display the data.
 
 #### *If you have to scale your solution to 100 users/second traffic what changes would you make, if any?*
-I believe this implementation can already scale to 100 users/second. The server is extremely basic, we just host a JSON file that *might* update every 4 seconds. The JSON file is likely to be under 400 bytes, and the clients make extremely minimal `GET` requests, so we don't really send a lot of data.
+I believe this implementation can already scale to 100 users/second. The backend has two tasks, first, it spawns a thread that queries the exchanges and updates the JSON. Once that thread has been created, we spin up a webserver that serves the JSON to users who hit the `api/data` endpoint. One thing that might be limiting performance is the usage of **read-write locks**. I use a `RwLock` so that the thread that updates the JSON has exclusive access when writing, but the `n` threads that read the JSON to serve it to users can have shared access. 
 
-For reference, on my machine, `rust_test.py` seems to give me a bandwidth of around 480 users/sec in release mode. 
+The JSON is likely to be under 250 bytes, and the clients make extremely minimal `GET` requests, so we don't really send a lot of data. For reference, on my machine, `rust_test.py` seems to give me a bandwidth of around 480 users/sec when the backend is compiled in release mode.  Here's a [script](rust_test.py) that can test the traffic bandwidth. 
 
-~~Here's a [script](rust_test.py) that can test the traffic bandwidth. If I wanted to scale it beyond what it can currently handle, I would probably use a better webserver, maybe use a backend framework like Django, certainly implement some form of caching (so the server doesn't send data the client already has), upgrade the hardware, or even use faster programming language (Java/Scala, Go, Rust).~~
+~~If I wanted to scale it beyond what it can currently handle, I would probably use a better webserver, maybe use a backend framework like Django, certainly implement some form of caching (so the server doesn't send data the client already has), upgrade the hardware, or even use faster programming language (Java/Scala, Go, Rust).~~
 
 #### *What are some other enhancements you would have made, if you had more time to do this implementation*
 I would add a very simple animation to show when prices or recommendations change (ex. change opacity, or italicize briefly), as it can be difficult to tell with such barebones text.

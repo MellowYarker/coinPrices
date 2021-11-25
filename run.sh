@@ -1,2 +1,4 @@
 cd backend
-cargo run --release
+cargo run --release &
+cd ../frontend/app
+npm run serve && kill $!
